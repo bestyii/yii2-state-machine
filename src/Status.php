@@ -1,42 +1,32 @@
 <?php
 
-namespace conceptho\state;
+namespace bestyii\state;
 
+use yii\base\BaseObject;
 use yii\base\Behavior;
 
-class Status extends Behavior
+abstract class Status extends BaseObject
 {
 
-    public $stateBehavior;
     public $label = "";
     public $id = "";
+    public static $availableStatus = [];
 
     public function __construct()
     {
-        if (empty($this->id))
+        if (empty($this->id)) {
             $this->id = strtolower((new \ReflectionClass($this))->getShortName());
-        if (empty($this->label))
-            $this->id = (new \ReflectionClass($this))->getShortName();
+        }
+        if (empty($this->label)) {
+            $this->label = (new \ReflectionClass($this))->getShortName();
+        }
+
         parent::__construct();
 
     }
 
-    public function getAvailableStatus()
-    {
-        return $this->stateBehavior->availableStatus;
-    }
 
-    public function getAvailableStatusObjects()
-    {
-        return $this->stateBehavior->availableStatusObjects;
-    }
-
-    public function changeTo($id, $data = [], $force = false)
-    {
-        return $this->stateBehavior->changeTo($id, $data, $force);
-    }
-
-    public function canChangeTo($id)
+    public function canChangeTo($id, $model)
     {
         return true;
     }
@@ -51,14 +41,12 @@ class Status extends Behavior
         return $this->label;
     }
 
-    public function onExit($id, $event)
+    public function onExit($id, $event, $model)
     {
-        return true;
     }
 
-    public function onEntry($id, $event)
+    public function onEntry($id, $event, $model)
     {
-        return true;
     }
 
     public function __toString()

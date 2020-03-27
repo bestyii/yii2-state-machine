@@ -2,8 +2,8 @@
 
 This package enable state machine usage into attributes of a Model (Active Record).
 
-[![Latest Stable Version](https://poser.pugx.org/conceptho/yii2-state-machine/v/stable)](https://packagist.org/packages/conceptho/yii2-state-machine)
-[![Total Downloads](https://poser.pugx.org/conceptho/yii2-state-machine/downloads.png)](https://packagist.org/packages/conceptho/yii2-state-machine)
+[![Latest Stable Version](https://poser.pugx.org/bestyii/yii2-state-machine/v/stable)](https://packagist.org/packages/bestyii/yii2-state-machine)
+[![Total Downloads](https://poser.pugx.org/bestyii/yii2-state-machine/downloads.png)](https://packagist.org/packages/bestyii/yii2-state-machine)
 
 Installation
 ------------
@@ -13,13 +13,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-composer require conceptho/yii2-state-machine
+composer require bestyii/yii2-state-machine
 ```
 
 or add
 
 ```json
-"conceptho/yii2-state-machine": "dev-master"
+"bestyii/yii2-state-machine": "dev-master"
 ```
 
 to the `require` section of your composer.json.
@@ -35,7 +35,9 @@ Model definition:
 namespace app\models;
  
 class User extends \yii\db\ActiveRecord {
-    
+    const  STATUS_ACTIVE = 'ACTIVE';
+    const  STATUS_INACTIVE = 'INACTIVE';
+    const  STATUS_DISABLED = 'DISABLED';
     public function modelLabel() {
         return 'User';
     }
@@ -43,15 +45,14 @@ class User extends \yii\db\ActiveRecord {
     public function behaviors() {
         return \yii\helpers\ArrayHelper::merge(parent::behvaiors(), [
             [
-                'class' => conceptho\state\Machine::class,
-                'initial' => 'active', /// Initial status
+                'class' => bestyii\state\Machine::class,
+                'initial' => self::STATUS_PENDING, /// Initial status
                 'attr' => 'status', /// Attribute that will use this state machine
-                'namespace' => 'app\models\status\user', /// Namespace for the Status class definitions
                 'model_label' => $this->modelLabel(),
                 'transitions' => [
-                    'active' => ['inactive', 'disabled'],
-                    'inactive' => ['active', 'disabled'],
-                    'disabled' => ['inactive']
+                    Active::className(),
+                    Inactive::className(),
+                    Disabled::className()
                 ]
             ]   
         ]);
@@ -64,79 +65,31 @@ Status definitions:
 /// Active status
 namespace app\models\status\user;
 
-use conceptho\state\Status;
+use bestyii\state\Status;
 
 class Active extends Status {
-    public const ID = 'active';
+    public $id = User::STATUS_ACTIVE;
     public $label = 'Active';
     public $labelColor = 'primary';
-    
-    public function onExit($id, $event)
+    public static $availableStatus = [User::STATUS_INACTIVE, User::STATUS_DISABLED];
+
+    public function canChangeTo($id,$model){
+        return true;
+    }
+
+    public function onExit($id, $event,$model)
     {
         /// event triggered when the status is changed from Active to another status
-        return true;
     }
     
-    public function onEntry($id, $event)
+    public function onEntry($id, $event,$model)
     {
         /// event triggered when the status is changed from another status to Active
-        return true;
     }
 
 }
 ```
 
-```php
-/// Inactive Status
-namespace app\models\status\user;
-
-use conceptho\state\Status;
-
-class Inactive extends Status {
-    public const ID = 'inactive';
-    public $label = 'Inactive';
-    public $labelColor = 'danger';
-
-    public function onExit($id, $event)
-    {
-        /// event triggered when the status is changed from Inactive to another status
-        return true;
-    }
-    
-    public function onEntry($id, $event)
-    {
-        /// event triggered when the status is changed from another status to Inactive
-        return true;
-    }
-
-}
-```
-
-```php
-/// Disabled Status
-namespace app\models\status\user;
-
-use conceptho\state\status;
-
-class Disabled extends Status {
-    public const ID = 'disabled';
-    public $label = 'Disabled';
-    public $labelColor = 'muted';
-
-    public function onExit($id, $event)
-    {
-        /// event triggered when the status is changed from Disabled to another status
-        return true;
-    }
-    
-    public function onEntry($id, $event)
-    {
-        /// event triggered when the status is changed from another status to Disabled
-        return true;
-    }
-
-}
-```
 
 ### Example:
 ```php

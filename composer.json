@@ -1,5 +1,5 @@
 {
-    "name": "conceptho/yii2-state-machine",
+    "name": "bestyii/yii2-state-machine",
     "description": "Yii2 State Machine",
     "type": "yii2-extension",
     "authors": [
@@ -10,7 +10,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "conceptho\\state\\": "src/"
+            "bestyii\\state\\": "src/"
         }
     },
     "minimum-stability": "stable",
