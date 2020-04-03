@@ -2,8 +2,13 @@
 
 namespace bestyii\state;
 
+use Tree\Node\Node;
+use Tree\Visitor\PostOrderVisitor;
+use Tree\Visitor\PreOrderVisitor;
+use Tree\Visitor\YieldVisitor;
 use yii\base\Behavior;
 use yii\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
 use yii\helpers\VarDumper;
 use yii\web\BadRequestHttpException;
@@ -132,7 +137,7 @@ class Machine extends Behavior
             throw new BadRequestHttpException('状态ID不在允许的范围内');
         }
         if (!in_array($id, $currentStatus::$availableStatus)) {
-            throw new BadRequestHttpException($currentStatus->label.'目标状态ID['.$id.']不在可以跳转的范围内');
+            throw new BadRequestHttpException($currentStatus->label . '目标状态ID[' . $id . ']不在可以跳转的范围内');
         }
 
         return in_array($id, $this->options) &&
@@ -171,6 +176,39 @@ class Machine extends Behavior
         }
 
         return $availableStatus;
+    }
+
+    public function getStatusChain()
+    {
+        $fn = function ($statusId) use (&$fn) {
+            $status = $this->getStatusObject($statusId);
+            $note = new Node($status);
+            foreach ($status::$availableStatus as $targetStatus) {
+                $note->addChild($fn($targetStatus));
+            }
+            return $note;
+        };
+
+        $tree = $fn($this->initial);
+
+        $visitor = new YieldVisitor;
+        $yield = $tree->accept($visitor);
+        $chains = [];
+        foreach ($yield as $end) {
+            $chain = [];
+            foreach ($end->getAncestorsAndSelf() as $node) {
+                $status = $node->getValue();
+                $chain[$status->id] = ArrayHelper::merge(ArrayHelper::toArray($status), ['current' => $status == $this->getStatus()->id]);
+            }
+            if (in_array($this->getStatus()->id, array_keys($chain))) {
+                $chains[count($chain)] = array_values($chain);
+            }
+            unset($chain);
+        }
+        krsort($chains);
+
+        return $chains;
+
     }
 
     public function changeTo($id, $data = array(), $force = false)
